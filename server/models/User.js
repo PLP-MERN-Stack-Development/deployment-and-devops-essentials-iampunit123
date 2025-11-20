@@ -1,145 +1,57 @@
-// models/User.js
-import mongoose from 'mongoose';
-import bcrypt from 'bcryptjs';
-import validator from 'validator';
+const mongoose = require("mongoose");
+const bcrypt = require("bcryptjs");
+const jwt = require("jsonwebtoken");
 
 const userSchema = new mongoose.Schema({
-  name: {
-    type: String,
-    required: [true, 'Please tell us your name!'],
+  name: { 
+    type: String, 
+    required: [true, 'Name is required'],
     trim: true,
     maxlength: [50, 'Name cannot be more than 50 characters']
   },
-  email: {
-    type: String,
-    required: [true, 'Please provide your email'],
+  email: { 
+    type: String, 
+    required: [true, 'Email is required'],
     unique: true,
     lowercase: true,
-    validate: [validator.isEmail, 'Please provide a valid email']
+    match: [/^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/, 'Please enter a valid email']
   },
-  photo: {
-    type: String,
-    default: 'default.jpg'
+  password: { 
+    type: String, 
+    required: [true, 'Password is required'],
+    minlength: [6, 'Password must be at least 6 characters']
   },
-  role: {
-    type: String,
-    enum: ['user', 'guide', 'lead-guide', 'admin'],
-    default: 'user'
-  },
-  password: {
-    type: String,
-    required: [true, 'Please provide a password'],
-    minlength: 8,
-    select: false
-  },
-  passwordConfirm: {
-    type: String,
-    required: [true, 'Please confirm your password'],
-    validate: {
-      validator: function(el) {
-        return el === this.password;
-      },
-      message: 'Passwords are not the same!'
-    }
-  },
-  passwordChangedAt: Date,
-  passwordResetToken: String,
-  passwordResetExpires: Date,
-  active: {
-    type: Boolean,
-    default: true,
-    select: false
-  },
-  phone: {
-    type: String,
-    validate: {
-      validator: function(v) {
-        return /^\+?[\d\s-()]{10,}$/.test(v);
-      },
-      message: 'Please provide a valid phone number'
-    }
-  },
-  dateOfBirth: Date,
-  nationality: String,
-  emergencyContact: {
-    name: String,
-    phone: String,
-    relationship: String
-  },
-  preferences: {
-    newsletter: { type: Boolean, default: true },
-    smsNotifications: { type: Boolean, default: false }
-  }
-}, {
-  timestamps: true,
-  toJSON: { virtuals: true },
-  toObject: { virtuals: true }
+}, { 
+  timestamps: true 
 });
 
-// Virtual populate
-userSchema.virtual('bookings', {
-  ref: 'Booking',
-  foreignField: 'user',
-  localField: '_id'
-});
-
-userSchema.virtual('reviews', {
-  ref: 'Review',
-  foreignField: 'user',
-  localField: '_id'
-});
-
-// Indexes
-userSchema.index({ email: 1 });
-userSchema.index({ role: 1 });
-
-// Middleware
+// Hash password before saving
 userSchema.pre('save', async function(next) {
-  if (!this.isModified('password')) return next();
-  
-  this.password = await bcrypt.hash(this.password, 12);
-  this.passwordConfirm = undefined;
-  next();
-});
-
-userSchema.pre('save', function(next) {
-  if (!this.isModified('password') || this.isNew) return next();
-  
-  this.passwordChangedAt = Date.now() - 1000;
-  next();
-});
-
-userSchema.pre(/^find/, function(next) {
-  this.find({ active: { $ne: false } });
-  next();
-});
-
-// Instance methods
-userSchema.methods.correctPassword = async function(candidatePassword, userPassword) {
-  return await bcrypt.compare(candidatePassword, userPassword);
-};
-
-userSchema.methods.changedPasswordAfter = function(JWTTimestamp) {
-  if (this.passwordChangedAt) {
-    const changedTimestamp = parseInt(this.passwordChangedAt.getTime() / 1000, 10);
-    return JWTTimestamp < changedTimestamp;
+  if (!this.isModified('password')) {
+    next();
   }
-  return false;
+  
+  try {
+    const salt = await bcrypt.genSalt(10);
+    this.password = await bcrypt.hash(this.password, salt);
+    next();
+  } catch (error) {
+    next(error);
+  }
+});
+
+// Compare password method
+userSchema.methods.matchPassword = async function(enteredPassword) {
+  return await bcrypt.compare(enteredPassword, this.password);
 };
 
-userSchema.methods.createPasswordResetToken = function() {
-  const resetToken = crypto.randomBytes(32).toString('hex');
-  
-  this.passwordResetToken = crypto
-    .createHash('sha256')
-    .update(resetToken)
-    .digest('hex');
-  
-  this.passwordResetExpires = Date.now() + 10 * 60 * 1000; // 10 minutes
-  
-  return resetToken;
+// Generate JWT token
+userSchema.methods.generateToken = function() {
+  return jwt.sign(
+    { id: this._id }, 
+    process.env.JWT_SECRET || 'fallback_secret', 
+    { expiresIn: '30d' }
+  );
 };
 
-const User = mongoose.models.User || mongoose.model('User', userSchema);
-
-export default User;
+module.exports = mongoose.model("User", userSchema);

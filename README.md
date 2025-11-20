@@ -1,77 +1,78 @@
-# Deployment and DevOps for MERN Applications
+# MERN Stack Integration Assignment
 
-This assignment focuses on deploying a full MERN stack application to production, implementing CI/CD pipelines, and setting up monitoring for your application.
+This assignment focuses on building a full-stack MERN (MongoDB, Express.js, React.js, Node.js) application that demonstrates seamless integration between front-end and back-end components.
 
 ## Assignment Overview
 
-You will:
-1. Prepare your MERN application for production deployment
-2. Deploy the backend to a cloud platform
-3. Deploy the frontend to a static hosting service
-4. Set up CI/CD pipelines with GitHub Actions
-5. Implement monitoring and maintenance strategies
+You will build a blog application with the following features:
+1. RESTful API with Express.js and MongoDB
+2. React front-end with component architecture
+3. Full CRUD functionality for blog posts
+4. User authentication and authorization
+5. Advanced features like image uploads and comments
+
+## Project Structure
+
+```
+mern-blog/
+├── client/                 # React front-end
+│   ├── public/             # Static files
+│   ├── src/                # React source code
+│   │   ├── components/     # Reusable components
+│   │   ├── pages/          # Page components
+│   │   ├── hooks/          # Custom React hooks
+│   │   ├── services/       # API services
+│   │   ├── context/        # React context providers
+│   │   └── App.jsx         # Main application component
+│   └── package.json        # Client dependencies
+├── server/                 # Express.js back-end
+│   ├── config/             # Configuration files
+│   ├── controllers/        # Route controllers
+│   ├── models/             # Mongoose models
+│   ├── routes/             # API routes
+│   ├── middleware/         # Custom middleware
+│   ├── utils/              # Utility functions
+│   ├── server.js           # Main server file
+│   └── package.json        # Server dependencies
+└── README.md               # Project documentation
+```
 
 ## Getting Started
 
 1. Accept the GitHub Classroom assignment invitation
 2. Clone your personal repository that was created by GitHub Classroom
-3. Follow the setup instructions in the `Week7-Assignment.md` file
-4. Use the provided templates and configuration files as a starting point
+3. Follow the setup instructions in the `Week4-Assignment.md` file
+4. Complete the tasks outlined in the assignment
 
 ## Files Included
 
-- `Week7-Assignment.md`: Detailed assignment instructions
-- `.github/workflows/`: GitHub Actions workflow templates
-- `deployment/`: Deployment configuration files and scripts
-- `.env.example`: Example environment variable templates
-- `monitoring/`: Monitoring configuration examples
+- `Week4-Assignment.md`: Detailed assignment instructions
+- Starter code for both client and server:
+  - Basic project structure
+  - Configuration files
+  - Sample models and components
 
 ## Requirements
 
-- A completed MERN stack application from previous weeks
-- Accounts on the following services:
-  - GitHub
-  - MongoDB Atlas
-  - Render, Railway, or Heroku (for backend)
-  - Vercel, Netlify, or GitHub Pages (for frontend)
-- Basic understanding of CI/CD concepts
-
-## Deployment Platforms
-
-### Backend Deployment Options
-- **Render**: Easy to use, free tier available
-- **Railway**: Developer-friendly, generous free tier
-- **Heroku**: Well-established, extensive documentation
-
-### Frontend Deployment Options
-- **Vercel**: Optimized for React apps, easy integration
-- **Netlify**: Great for static sites, good CI/CD
-- **GitHub Pages**: Free, integrated with GitHub
-
-## CI/CD Pipeline
-
-The assignment includes templates for setting up GitHub Actions workflows:
-- `frontend-ci.yml`: Tests and builds the React application
-- `backend-ci.yml`: Tests the Express.js backend
-- `frontend-cd.yml`: Deploys the frontend to your chosen platform
-- `backend-cd.yml`: Deploys the backend to your chosen platform
+- Node.js (v18 or higher)
+- MongoDB (local installation or Atlas account)
+- npm or yarn
+- Git
 
 ## Submission
 
 Your work will be automatically submitted when you push to your GitHub Classroom repository. Make sure to:
 
-1. Complete all deployment tasks
-2. Set up CI/CD pipelines with GitHub Actions
-3. Deploy both frontend and backend to production
-4. Document your deployment process in the README.md
-5. Include screenshots of your CI/CD pipeline in action
-6. Add URLs to your deployed applications
+1. Complete both the client and server portions of the application
+2. Implement all required API endpoints
+3. Create the necessary React components and hooks
+4. Document your API and setup process in the README.md
+5. Include screenshots of your working application
 
 ## Resources
 
-- [GitHub Actions Documentation](https://docs.github.com/en/actions)
-- [MongoDB Atlas Documentation](https://docs.atlas.mongodb.com/)
-- [Render Documentation](https://render.com/docs)
-- [Railway Documentation](https://docs.railway.app/)
-- [Vercel Documentation](https://vercel.com/docs)
-- [Netlify Documentation](https://docs.netlify.com/) 
+- [MongoDB Documentation](https://docs.mongodb.com/)
+- [Express.js Documentation](https://expressjs.com/)
+- [React Documentation](https://react.dev/)
+- [Node.js Documentation](https://nodejs.org/en/docs/)
+- [Mongoose Documentation](https://mongoosejs.com/docs/) 

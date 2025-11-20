@@ -1,155 +1,71 @@
-import express from 'express';
-import mongoose from 'mongoose';
-import cors from 'cors';
-import helmet from 'helmet';
-import sanitizeHtml from "sanitize-html";
-import hpp from 'hpp';
-import compression from 'compression';
-import dotenv from 'dotenv';
-
-// Import routes
-import routes from './routes/index.js';
-
-// Import middleware
-import { generalLimiter, authLimiter } from './middleware/rateLimiting.js';
-import globalErrorHandler from './controllers/errorController.js';
+const express = require('express');
+const mongoose = require('mongoose');
+const cors = require('cors');
+const dotenv = require('dotenv');
 
 dotenv.config();
 
 const app = express();
 
-// Security Middleware
-app.use(helmet());
+// Middleware
 app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:5173',
-  credentials: true,
+  origin: ['http://localhost:5173', 'https://blog-site-5c3052.netlify.app'],
+  credentials: true
 }));
-
-// Rate limiting
-app.use('/api', generalLimiter);
-app.use('/api/auth', authLimiter);
-
-// ✅ BODY PARSING FIRST - so routes can read JSON
 app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+app.use(express.urlencoded({ extended: true }));
 
-// ✅ Data sanitization AFTER body parsing
-app.use((req, res, next) => {
-  const sanitizeObject = (obj) => {
-    if (!obj || typeof obj !== "object") return;
+// Routes
+app.use('/api/auth', require('./routes/auth'));
+app.use('/api/posts', require('./routes/posts'));
 
-    for (let key in obj) {
-      if (key.startsWith("$") || key.includes(".")) {
-        delete obj[key];
-      } else if (typeof obj[key] === "object") {
-        sanitizeObject(obj[key]);
-      }
-    }
-  };
-
-  sanitizeObject(req.body);
-  sanitizeObject(req.query);
-  sanitizeObject(req.params);
-  next();
+// Health check route
+app.get('/api/health', (req, res) => {
+  res.status(200).json({ 
+    message: 'Server is running', 
+    timestamp: new Date().toISOString() 
+  });
 });
-
-// XSS Sanitizer
-app.use((req, res, next) => {
-  if (req.body) {
-    for (let key in req.body) {
-      if (typeof req.body[key] === "string") {
-        req.body[key] = sanitizeHtml(req.body[key], {
-          allowedTags: [],
-          allowedAttributes: {},
-        });
-      }
-    }
-  }
-  next();
-});
-
-// HPP Protection
-app.use(
-  hpp({
-    whitelist: [
-      "duration",
-      "ratingsQuantity",
-      "ratingsAverage",
-      "maxGroupSize",
-      "difficulty",
-      "price",
-    ],
-  })
-);
-
-// Compression
-app.use(compression());
 
 // MongoDB Connection
-const connectDB = async () => {
-  try {
-    let connectionString;
-    let options = {};
-    
-    if (process.env.NODE_ENV === 'production') {
-      connectionString = process.env.MONGODB_ATLAS_URI;
-      console.log('🔗 Connecting to MongoDB Atlas...');
-      options = {
-        useNewUrlParser: true,
-        useUnifiedTopology: true,
-      };
-    } else {
-      connectionString = process.env.MONGODB_URI;
-      console.log('🔗 Connecting to local MongoDB...');
-    }
+const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/greatblog';
 
-    const conn = await mongoose.connect(connectionString, options);
-    console.log(`✅ MongoDB Connected: ${conn.connection.host}`);
-    console.log(`📊 Database: ${conn.connection.name}`);
-  } catch (error) {
-    console.error('❌ MongoDB connection error:', error.message);
-    process.exit(1);
-  }
-};
+mongoose.connect(MONGODB_URI, {
+  useNewUrlParser: true,
+  useUnifiedTopology: true,
+})
+.then(() => console.log('✅ MongoDB Connected Successfully'))
+.catch(err => {
+  console.error('❌ MongoDB Connection Error:', err);
+  process.exit(1);
+});
 
-connectDB();
+// Handle unhandled promise rejections
+process.on('unhandledRejection', (err, promise) => {
+  console.log('❌ Unhandled Rejection at:', promise, 'reason:', err);
+});
 
-// ✅ ROUTES LAST - after all middleware
-app.use('/api/v1', routes);
-app.use('/api', routes); // Support both versions
-
-// Health check
-app.get('/api/v1/health', (req, res) => {
-  res.status(200).json({
-    status: 'success',
-    message: 'SafariVista API is running!',
-    timestamp: new Date().toISOString(),
-    environment: process.env.NODE_ENV,
-    uptime: `${process.uptime().toFixed(2)} seconds`
+// Global error handling middleware
+app.use((err, req, res, next) => {
+  console.error('❌ Error Stack:', err.stack);
+  res.status(500).json({
+    message: 'Something went wrong!',
+    error: process.env.NODE_ENV === 'development' ? err.message : {}
   });
 });
 
-// 404 handler
+// 404 handler - FIXED: Use proper route handling
 app.use((req, res) => {
-  res.status(404).json({
-    status: 'fail',
-    message: `Can't find ${req.originalUrl} on this server!`
+  res.status(404).json({ 
+    message: 'Route not found',
+    path: req.path,
+    method: req.method 
   });
 });
-
-// Global error handler
-app.use(globalErrorHandler);
 
 const PORT = process.env.PORT || 5000;
-const server = app.listen(PORT, () => {
-  console.log(`🚀 SafariVista backend running on port ${PORT}`);
-  console.log(`📊 Environment: ${process.env.NODE_ENV || 'development'}`);
-});
 
-process.on('unhandledRejection', (err) => {
-  console.log('UNHANDLED REJECTION! 💥 Shutting down...');
-  console.log(err.name, err.message);
-  server.close(() => process.exit(1));
+app.listen(PORT, () => {
+  console.log(`🚀 Server running on port ${PORT}`);
+  console.log(`🔗 Health check: http://localhost:${PORT}/api/health`);
 });
-
-export default app;
